@@ -32,13 +32,17 @@ namespace Cake.FluentMigrator
         /// <returns>The path to Migrate.exe.</returns>
         public FilePath ResolvePath()
         {
-            var arch = _environment.Platform.Is64Bit ? "AnyCPU" : "x86";
-            var frameworkVersion = _environment.Runtime.TargetFramework.Version.Major >= 4 ? "40" : "35";
-            var toolPath = _toolLocator.Resolve($"{arch}/{frameworkVersion}/Migrate.exe");
+            var version = this._environment.Runtime.TargetFramework.Version;
+            if (version.Major < 4)
+                throw new CakeException($"Framework version not supported: {version}");
+
+            var frameworkVersion = version.Major == 4 && version.Minor < 5 ? "net40" : "net45";
+
+            var toolPath = _toolLocator.Resolve($"{frameworkVersion}/Migrate.exe");
 
             if (toolPath == null || !_fileSystem.Exist(toolPath))
             {
-                throw new CakeException($"Could not locate Migrate.exe for {arch}/{frameworkVersion}");
+                throw new CakeException($"Could not locate Migrate.exe for {frameworkVersion}");
             }
 
             return toolPath;
